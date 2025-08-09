@@ -66,22 +66,38 @@ function updateProposalText() {
 }
 
 /**
- * Handle the runaway "No" button behavior
+ * Handle the runaway "No" button behavior - now floats everywhere on screen
  */
 function runAway() {
-    const container = document.querySelector('.buttons-container');
+    // Get screen dimensions
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const buttonWidth = noButton.offsetWidth;
+    const buttonHeight = noButton.offsetHeight;
     
-    // Generate random position within the container
-    const maxX = container.offsetWidth - noButton.offsetWidth;
-    const maxY = container.offsetHeight - noButton.offsetHeight;
+    // Get Yes button position to avoid overlap
+    const yesButton = document.querySelector('.btn-yes');
+    const yesRect = yesButton.getBoundingClientRect();
     
-    const randomX = Math.random() * maxX;
-    const randomY = Math.random() * maxY;
+    let randomX, randomY;
+    let attempts = 0;
     
-    // Move button to random position
-    noButton.style.position = 'absolute';
+    // Try to find a position that doesn't overlap with Yes button
+    do {
+        randomX = Math.random() * (screenWidth - buttonWidth);
+        randomY = Math.random() * (screenHeight - buttonHeight);
+        attempts++;
+    } while (attempts < 10 && isOverlapping(randomX, randomY, buttonWidth, buttonHeight, yesRect));
+    
+    // Ensure button stays within screen bounds
+    randomX = Math.max(0, Math.min(randomX, screenWidth - buttonWidth));
+    randomY = Math.max(0, Math.min(randomY, screenHeight - buttonHeight));
+    
+    // Move button to random position on entire screen
+    noButton.style.position = 'fixed';
     noButton.style.left = randomX + 'px';
     noButton.style.top = randomY + 'px';
+    noButton.style.zIndex = '1000';
     
     // Change button text for fun
     const messages = [
@@ -92,11 +108,25 @@ function runAway() {
         'Really? 🤔',
         'Nice try! 😏',
         'Almost! 🎯',
-        'So close! 🤏'
+        'So close! 🤏',
+        'Run away! 💨',
+        'Catch me! 🏃‍♂️',
+        'No way! 🙅‍♂️',
+        'Never! 😤'
     ];
     
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
     noButton.textContent = randomMessage;
+}
+
+/**
+ * Check if No button position would overlap with Yes button
+ */
+function isOverlapping(x, y, width, height, yesRect) {
+    return !(x > yesRect.right || 
+             x + width < yesRect.left || 
+             y > yesRect.bottom || 
+             y + height < yesRect.top);
 }
 
 /**
@@ -181,9 +211,12 @@ function restart() {
  * Reset the "No" button to its original state
  */
 function resetNoButton() {
-    noButton.style.position = 'relative';
-    noButton.style.left = 'auto';
+    noButton.style.position = 'fixed';
+    noButton.style.left = '60%';
     noButton.style.top = 'auto';
+    noButton.style.right = 'auto';
+    noButton.style.bottom = 'auto';
+    noButton.style.zIndex = '5';
     noButton.textContent = 'No 😔';
 }
 
@@ -204,12 +237,49 @@ function showSection(section) {
 }
 
 /**
- * Show alert message (can be customized for better UX)
+ * Show custom alert message with beautiful styling
  * @param {string} message - The message to display
  */
 function showAlert(message) {
-    alert(message);
-    // TODO: Replace with custom modal for better user experience
+    // Remove any existing alert
+    const existingAlert = document.getElementById('customAlert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+
+    // Create custom alert element
+    const alertBox = document.createElement('div');
+    alertBox.id = 'customAlert';
+    alertBox.innerHTML = `
+        <div class="alert-content">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-message">${message}</div>
+            <button class="alert-close" onclick="closeAlert()">OK</button>
+        </div>
+    `;
+
+    // Add to body
+    document.body.appendChild(alertBox);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        closeAlert();
+    }, 3000);
+}
+
+/**
+ * Close the custom alert
+ */
+function closeAlert() {
+    const alertBox = document.getElementById('customAlert');
+    if (alertBox) {
+        alertBox.style.opacity = '0';
+        setTimeout(() => {
+            if (alertBox.parentNode) {
+                alertBox.parentNode.removeChild(alertBox);
+            }
+        }, 300);
+    }
 }
 
 /**
