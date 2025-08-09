@@ -15,13 +15,15 @@ body {
         linear-gradient(135deg, #ff6b9d 0%, #c44569 25%, #f8b500 50%, #ff6b9d 75%, #e056fd 100%);
     background-attachment: fixed;
     min-height: 100vh;
+    max-height: 100vh;
+    height: 100vh;
+    width: 100vW;
     padding: 2rem 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     position: relative;
 }
 
@@ -63,9 +65,13 @@ body::before {
             width: 80%;
             margin: 1rem auto;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
-
+        
+        #noButton {
+            transition: left 0.4s ease, top 0.4s ease;
+        }
+        
 .container::before {
     content: '💕';
     position: absolute;
@@ -91,6 +97,17 @@ body::before {
     50% { transform: scale(1.2); opacity: 0.3; }
 }
 
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.05;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.1;
+    }
+}
+
 /* Section Display Controls */
 .name-section {
     display: block;
@@ -98,6 +115,8 @@ body::before {
 
 .proposal-section {
     display: none;
+    position: relative;
+    min-height: 300px;
 }
 
 .success-section {
@@ -115,9 +134,9 @@ h1 {
 
 .proposal-text {
     font-size: 1.4rem;
-    color: #333;
+    color: #3b1b1b;
     margin-bottom: 1.2rem;
-    font-weight: 300;
+    font-weight: 600;
 }
 
 .success-text {
@@ -181,9 +200,9 @@ input[type="text"]:focus {
     padding: 1.5rem 3rem;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50px;
-    position: fixed;
-    left: 30%;
-    z-index: 10;
+    position: relative;
+    z-index: 100;
+    margin-right: 2rem;
 }
 
 .btn-yes:hover {
@@ -197,22 +216,26 @@ input[type="text"]:focus {
     color: white;
     font-size: 1.5rem;
     padding: 1.5rem 3rem;
-    position: fixed;
-    transition: all 0.3s ease;
+    position: relative;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     border-radius: 50px;
-    z-index: 5;
+    z-index: 999;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+    margin-left: 2rem;
 }
 
 /* Button Container */
 .buttons-container {
     margin-top: 3rem;
     position: relative;
-    height: 150px;
+    height: 200px;
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
     align-items: center;
-    gap: 4rem;
+    gap: 2rem;
     padding: 2rem;
+    overflow: visible;
 }
 
 /* Heart Animations */

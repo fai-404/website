@@ -6,20 +6,31 @@
 // Global Variables
 let userName = '';
 
-// DOM Elements
-const nameSection = document.getElementById('nameSection');
-const proposalSection = document.getElementById('proposalSection');
-const successSection = document.getElementById('successSection');
-const nameInput = document.getElementById('nameInput');
-const proposalText = document.getElementById('proposalText');
-const successText = document.getElementById('successText');
-const noButton = document.getElementById('noButton');
-const floatingHeartsContainer = document.getElementById('floatingHearts');
+// DOM Elements - will be initialized after DOM is loaded
+let nameSection, proposalSection, successSection, nameInput, proposalText, successText, noButton, floatingHeartsContainer;
+
+/**
+ * Initialize DOM elements
+ */
+function initializeDOMElements() {
+    nameSection = document.getElementById('nameSection');
+    proposalSection = document.getElementById('proposalSection');
+    successSection = document.getElementById('successSection');
+    nameInput = document.getElementById('nameInput');
+    proposalText = document.getElementById('proposalText');
+    successText = document.getElementById('successText');
+    noButton = document.getElementById('noButton');
+    floatingHeartsContainer = document.getElementById('floatingHearts');
+}
 
 /**
  * Initialize the application when DOM is loaded
  */
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DOM elements first
+    initializeDOMElements();
+    
+    // Then initialize event listeners
     initializeEventListeners();
 });
 
@@ -36,6 +47,62 @@ function initializeEventListeners() {
     
     // Focus on name input when page loads
     nameInput.focus();
+    
+    // Add click event listener to No button for initial activation
+    noButton.addEventListener('click', function() {
+        if (!isNoButtonActivated) {
+            // First click - activate the button and move it
+            isNoButtonActivated = true;
+            moveNoButtonRandomly();
+            
+            // Now enable hover listeners after first click
+            enableHoverListeners();
+        } else {
+            // Subsequent clicks - just move the button
+            moveNoButtonRandomly();
+        }
+    });
+}
+
+/**
+ * Enable hover event listeners after first click
+ */
+function enableHoverListeners() {
+    // Only add listeners if they haven't been added already
+    if (!hoverListenersAdded) {
+        // Add hover event listeners to No button
+        noButton.addEventListener('mouseenter', handleNoButtonMouseEnter);
+        noButton.addEventListener('mouseleave', handleNoButtonMouseLeave);
+        hoverListenersAdded = true;
+    }
+}
+
+/**
+ * Handle mouse enter on No button
+ */
+function handleNoButtonMouseEnter() {
+    // Only start hover movement if button has been activated
+    if (isNoButtonActivated) {
+        // Clear any existing interval first
+        if (hoverMoveInterval) {
+            clearInterval(hoverMoveInterval);
+        }
+        // Start continuous movement when hovering (faster speed)
+        hoverMoveInterval = setInterval(moveNoButtonRandomly, 400); // Move every 400ms for faster animation
+        moveNoButtonRandomly(); // Move immediately on hover
+    }
+}
+
+/**
+ * Handle mouse leave on No button
+ */
+function handleNoButtonMouseLeave() {
+    // Stop movement when not hovering
+    if (hoverMoveInterval) {
+        clearInterval(hoverMoveInterval);
+        hoverMoveInterval = null;
+    }
+    // Don't return to original position after activation - stay where it moved
 }
 
 /**
@@ -56,78 +123,140 @@ function submitName() {
     
     // Update proposal text with user's name
     updateProposalText();
+    
+    // Reset activation state when showing proposal
+    isNoButtonActivated = false;
+    
+    // Clear any existing hover intervals to prevent premature movement
+    if (hoverMoveInterval) {
+        clearInterval(hoverMoveInterval);
+        hoverMoveInterval = null;
+    }
 }
 
 /**
  * Update the proposal text with the user's name
  */
 function updateProposalText() {
-    proposalText.textContent = `Hey ${userName}, will you say Yes? 💕`;
+    proposalText.textContent = `Hey ${userName}, Will You Be Mine ? 💕`;
 }
 
+// Global variables for hover movement and state tracking
+let hoverMoveInterval;
+let isNoButtonActivated = false; // Track if No button has been clicked once
+let hoverListenersAdded = false; // Track if hover listeners have been added
+
 /**
- * Handle the runaway "No" button behavior - now floats everywhere on screen
+ * Move the "No" button to a random position within a reasonable area, avoiding the Yes button
  */
-function runAway() {
-    // Get screen dimensions
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const buttonWidth = noButton.offsetWidth;
-    const buttonHeight = noButton.offsetHeight;
+function moveNoButtonRandomly() {
+    // Get window dimensions for viewport bounds
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
     
-    // Get Yes button position to avoid overlap
+    // Get button dimensions
+    const buttonWidth = noButton.offsetWidth;
+    const buttonHeight = noButton.offsetHeight; 
+    
+    // Get Yes button position to avoid it
     const yesButton = document.querySelector('.btn-yes');
-    const yesRect = yesButton.getBoundingClientRect();
+    let yesRect = null;
+    if (yesButton) {
+        yesRect = yesButton.getBoundingClientRect();
+    }
     
     let randomX, randomY;
     let attempts = 0;
+    const maxAttempts = 50;
     
-    // Try to find a position that doesn't overlap with Yes button
     do {
-        randomX = Math.random() * (screenWidth - buttonWidth);
-        randomY = Math.random() * (screenHeight - buttonHeight);
+        // Define a reasonable movement area (125% of viewport, centered)
+        const movementAreaWidth = windowWidth * 0;
+        const movementAreaHeight = windowHeight * 0;
+        const startX = (windowWidth - movementAreaWidth) / 2;
+        const startY = (windowHeight - movementAreaHeight) / 2;
+        
+        // Generate random position within the reasonable area
+        const padding = 20;
+        randomX = Math.random() * (movementAreaWidth - buttonWidth - padding * 2) + startX + padding;
+        randomY = Math.random() * (movementAreaHeight - buttonHeight - padding * 2) + startY + padding;
+        
         attempts++;
-    } while (attempts < 10 && isOverlapping(randomX, randomY, buttonWidth, buttonHeight, yesRect));
+        
+        // If no Yes button found or too many attempts, use the position
+        if (!yesRect || attempts >= maxAttempts) {
+            break;
+        }
+        
+        // Check if the new position overlaps with Yes button (with some buffer)
+        const buffer = 80; // Minimum distance from Yes button
+        const noButtonRect = {
+            left: randomX,
+            right: randomX + buttonWidth,
+            top: randomY,
+            bottom: randomY + buttonHeight
+        };
+        
+        const yesButtonWithBuffer = {
+            left: yesRect.left - buffer,
+            right: yesRect.right + buffer,
+            top: yesRect.top - buffer,
+            bottom: yesRect.bottom + buffer
+        };
+        
+        // Check if positions don't overlap
+        const noOverlap = (
+            noButtonRect.right < yesButtonWithBuffer.left ||
+            noButtonRect.left > yesButtonWithBuffer.right ||
+            noButtonRect.bottom < yesButtonWithBuffer.top ||
+            noButtonRect.top > yesButtonWithBuffer.bottom
+        );
+        
+        if (noOverlap) {
+            break;
+        }
+        
+    } while (attempts < maxAttempts);
     
-    // Ensure button stays within screen bounds
-    randomX = Math.max(0, Math.min(randomX, screenWidth - buttonWidth));
-    randomY = Math.max(0, Math.min(randomY, screenHeight - buttonHeight));
-    
-    // Move button to random position on entire screen
+    // Apply faster, smoother movement
+    noButton.style.transition = 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     noButton.style.position = 'fixed';
     noButton.style.left = randomX + 'px';
     noButton.style.top = randomY + 'px';
     noButton.style.zIndex = '1000';
-    
-    // Change button text for fun
-    const messages = [
-        'Nope! 😄', 
-        'Try again! 😜', 
-        'Not happening! 😂', 
-        'Keep trying! 🏃‍♂️',
-        'Really? 🤔',
-        'Nice try! 😏',
-        'Almost! 🎯',
-        'So close! 🤏',
-        'Run away! 💨',
-        'Catch me! 🏃‍♂️',
-        'No way! 🙅‍♂️',
-        'Never! 😤'
-    ];
-    
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    noButton.textContent = randomMessage;
 }
 
 /**
- * Check if No button position would overlap with Yes button
+ * Position the "No" button near the "Yes" button initially
  */
-function isOverlapping(x, y, width, height, yesRect) {
-    return !(x > yesRect.right || 
-             x + width < yesRect.left || 
-             y > yesRect.bottom || 
-             y + height < yesRect.top);
+function positionNoButtonNearYes() {
+    const yesButton = document.querySelector('.btn-yes');
+    if (!yesButton) return;
+    
+    const yesRect = yesButton.getBoundingClientRect();
+    const buttonWidth = noButton.offsetWidth;
+    const buttonHeight = noButton.offsetHeight;
+    
+    // Position to the right of Yes button with some spacing
+    const spacing = 20;
+    const leftPosition = yesRect.right + spacing;
+    const topPosition = yesRect.top;
+    
+    noButton.style.position = 'fixed';
+    noButton.style.left = leftPosition + 'px';
+    noButton.style.top = topPosition + 'px';
+    noButton.style.zIndex = '1000';
+    noButton.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    
+    // Reset activation state when repositioning
+    isNoButtonActivated = false;
 }
+
+
+
+
+
+
 
 /**
  * Handle "Yes" button click and show success
@@ -218,6 +347,24 @@ function resetNoButton() {
     noButton.style.bottom = 'auto';
     noButton.style.zIndex = '5';
     noButton.textContent = 'No 😔';
+    
+    // Reset activation state and clear all intervals
+    isNoButtonActivated = false;
+    hoverListenersAdded = false; // Reset hover listeners flag
+    
+    // Clear all intervals
+    if (hoverMoveInterval) {
+        clearInterval(hoverMoveInterval);
+        hoverMoveInterval = null;
+    }
+    if (typeof floatingInterval !== 'undefined' && floatingInterval) {
+        clearInterval(floatingInterval);
+        floatingInterval = null;
+    }
+    
+    // Remove existing hover event listeners to prevent duplicates
+    noButton.removeEventListener('mouseenter', handleNoButtonMouseEnter);
+    noButton.removeEventListener('mouseleave', handleNoButtonMouseLeave);
 }
 
 /**
